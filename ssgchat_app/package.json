@@ -1,18 +1,28 @@
 {
-  "name": "ssukchat-app",
+  "name": "ssgchat_app",
   "version": "1.0.0",
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "index.ts",
   "scripts": {
-    "start": "expo start"
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~49.0.0",
-    "react": "18.2.0",
-    "react-native": "0.72.0",
-    "@react-native-firebase/app": "^18.3.0",
-    "@react-native-firebase/auth": "^18.3.0",
-    "@react-native-firebase/messaging": "^18.3.0",
-    "firebase": "^10.4.0",
-    "react-navigation": "^4.4.4"
-  }
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "expo": "~53.0.17",
+    "expo-dev-client": "~5.2.4",
+    "expo-device": "~7.1.4",
+    "expo-notifications": "~0.31.4",
+    "expo-status-bar": "~2.2.3",
+    "firebase": "^11.10.0",
+    "react": "19.0.0",
+    "react-native": "0.79.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~19.0.10",
+    "typescript": "~5.8.3"
+  },
+  "private": true
 }
