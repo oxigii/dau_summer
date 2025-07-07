@@ -5,6 +5,9 @@ import {
   leaveChatRoom
 } from '../firebase/firestoreService';
 
+import { doc, updateDoc, deleteField } from 'firebase/firestore';
+import { db } from '../firebase/firebaseConfig';
+
 // 메시지 전송
 export const sendChat = async (spaceId, message, nickname) => {
   return sendMessage(spaceId, message, nickname);
@@ -23,4 +26,22 @@ export const enterChatRoom = async (spaceId, userId, nickname) => {
 // 채팅방 퇴장
 export const exitChatRoom = async (spaceId, userId) => {
   return leaveChatRoom(spaceId, userId);
+};
+
+// 최근 사용자 갱신
+export const updateRecentUser = async (spaceId, userId) => {
+  const ref = doc(db, 'chatRooms', spaceId);
+  await updateDoc(ref, {
+    [`recentUsers.${userId}`]: Date.now(),
+  });
+};
+
+// 참가자 제거
+export const removeParticipant = async (spaceId, userId) => {
+  await exitChatRoom(spaceId, userId);
+};
+
+// 참가자 추가
+export const addParticipant = async (spaceId, userId, nickname) => {
+  await enterChatRoom(spaceId, userId, nickname);
 };

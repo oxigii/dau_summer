@@ -1,5 +1,6 @@
-export function getSpaceId(lat: number, lon: number): string {
-  const roundedLat = lat.toFixed(3);
-  const roundedLon = lon.toFixed(3);
-  return `space_${roundedLat}_${roundedLon}`;
-}
+// utils/getSpaceId.ts
+export const getSpaceId = (lat: number, lng: number): string => {
+  const latFixed = lat.toFixed(3);
+  const lngFixed = lng.toFixed(3);
+  return `${latFixed}_${lngFixed}`;
+};
