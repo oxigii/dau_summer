@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "297815994330",
+    "project_id": "ssgchat-project",
+    "storage_bucket": "ssgchat-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:297815994330:android:2b17cdd5e6ce04e9cb5ae3",
+        "android_client_info": {
+          "package_name": "com.ssgchatapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxqOcWHVHGdxaPC0CJNVGdjyi4mjQ4UGc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
