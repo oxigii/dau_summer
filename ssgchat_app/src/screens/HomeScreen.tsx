@@ -1,23 +1,58 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, FlatList, TouchableOpacity } from 'react-native';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase/firebaseConfig';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import { useLocationTracker } from '../hooks/useLocationTracker';
 
 export default function HomeScreen({ navigation }) {
   const [rooms, setRooms] = useState([]);
 
-  useLocationTracker(); // 위치 추적 실행
+  const [userReady, setUserReady] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [nickname, setNickname] = useState('');
 
+  // 닉네임 랜덤 생성
+  const generateNickname = () => {
+    const animals = ['펭귄', '여우', '호랑이', '너구리', '토끼'];
+    const adj = ['궁금한', '귀여운', '조용한', '신속한', '반짝이는'];
+    const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    return `${rand(adj)}${rand(animals)}${Math.floor(Math.random() * 100)}`;
+  };
+
+  // 익명 로그인 + 준비
   useEffect(() => {
-    const q = query(collection(db, 'spaces'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const roomList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setRooms(roomList);
-    });
+    const init = async () => {
+      try {
+        const userCredential = await auth().signInAnonymously();
+        setUserId(userCredential.user.uid);
+        setNickname(generateNickname());
+        setUserReady(true);
+      } catch (error) {
+        console.error('익명 로그인 실패:', error);
+      }
+    };
+    init();
+  }, []);
+
+  // 위치 추적 시작
+  useEffect(() => {
+    if (userReady) {
+      useLocationTracker(userId, nickname);
+    }
+  }, [userReady]);
+
+  // Firestore에서 공간 목록 받아오기
+  useEffect(() => {
+    const unsubscribe = firestore()
+      .collection('spaces')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot((snapshot) => {
+        const roomList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRooms(roomList);
+      });
 
     return () => unsubscribe();
   }, []);
@@ -46,6 +81,7 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
+
 
 // --------------------------------------------------------------------------------
 

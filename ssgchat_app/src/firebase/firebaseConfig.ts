@@ -1,4 +1,5 @@
-import { initializeApp } from 'firebase/app';
+// src/firebase/firebaseConfig.ts
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import {
   EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -6,7 +7,7 @@ import {
   EXPO_PUBLIC_FIREBASE_PROJECT_ID,
   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  EXPO_PUBLIC_FIREBASE_APP_ID
+  EXPO_PUBLIC_FIREBASE_APP_ID,
 } from '@env';
 
 const firebaseConfig = {
@@ -18,5 +19,7 @@ const firebaseConfig = {
   appId: EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
+
+export { app, db };

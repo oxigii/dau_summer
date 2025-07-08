@@ -12,20 +12,34 @@
       "backgroundColor": "#ffffff"
     },
     "android": {
-      "package": "com.rladbeoeod.ssgchat", 
-      "versionCode": 1, 
+      "package": "com.rladbeoeod.ssgchat",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "googleServicesFile": "./google-services.json"  //안드로이드 설정 추가
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist" // iOS 설정 추가
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [   // RN Firebase용 플러그인 등록
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "8c8eebfd-1a2b-4b53-82a0-0c5e748a6706"
