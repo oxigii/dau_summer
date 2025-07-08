@@ -2,10 +2,11 @@ import {
   sendMessage,
   listenToMessages,
   joinChatRoom,
-  leaveChatRoom
+  leaveChatRoom,
+  createChatRoom
 } from '../firebase/firestoreService';
 
-import { doc, updateDoc, deleteField } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
 
 // 메시지 전송
@@ -18,8 +19,9 @@ export const subscribeToChat = (spaceId, onMessage) => {
   return listenToMessages(spaceId, onMessage);
 };
 
-// 채팅방 입장
+// ✅ 채팅방 입장 시 → 방 생성 + 참가자 등록
 export const enterChatRoom = async (spaceId, userId, nickname) => {
+  await createChatRoom(spaceId); // 💡 expiresAt 설정 포함
   return joinChatRoom(spaceId, userId, nickname);
 };
 
