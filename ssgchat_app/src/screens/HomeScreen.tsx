@@ -1,70 +1,65 @@
+// 협업 파트 임시로 구현
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase/firebaseConfig';
 import { useLocationTracker } from '../hooks/useLocationTracker';
+
+import auth from '@react-native-firebase/auth'; // ✅ Firebase Auth 추가
+import messaging from '@react-native-firebase/messaging'; // ✅ FCM 추가
+import { getOrCreateNickname } from '../utils/nicknameService'; // ✅ 닉네임 영구 저장 유틸
 
 export default function HomeScreen({ navigation }) {
   const [rooms, setRooms] = useState([]);
-
-  const [userReady, setUserReady] = useState(false);
+  const [ready, setReady] = useState(false); // ✅ 모든 값 초기화 완료 여부
   const [userId, setUserId] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [deviceToken, setDeviceToken] = useState('');
+  const [nickname, setNickname] = useState(''); // ✅ 상태로 관리
 
-  // 닉네임 랜덤 생성
-  const generateNickname = () => {
-    const animals = ['펭귄', '여우', '호랑이', '너구리', '토끼'];
-    const adj = ['궁금한', '귀여운', '조용한', '신속한', '반짝이는'];
-    const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    return `${rand(adj)}${rand(animals)}${Math.floor(Math.random() * 100)}`;
-  };
-
-  // 익명 로그인 + 준비
+  // ✅ 최초 실행 시 userId, deviceToken, nickname 준비
   useEffect(() => {
     const init = async () => {
-      try {
-        const userCredential = await auth().signInAnonymously();
-        setUserId(userCredential.user.uid);
-        setNickname(generateNickname());
-        setUserReady(true);
-      } catch (error) {
-        console.error('익명 로그인 실패:', error);
-      }
+      const authUser = await auth().signInAnonymously(); // ✅ 익명 로그인
+      const token = await messaging().getToken();         // ✅ FCM 토큰 발급
+      const nick = await getOrCreateNickname();           // ✅ 닉네임 불러오기 (없으면 생성 후 저장)
+
+      setUserId(authUser.user.uid);
+      setDeviceToken(token);
+      setNickname(nick);
+      setReady(true); // ✅ 모든 정보가 준비되었을 때만 위치 추적 시작
     };
     init();
   }, []);
 
-  // 위치 추적 시작
-  useEffect(() => {
-    if (userReady) {
-      useLocationTracker(userId, nickname);
-    }
-  }, [userReady]);
+  // ✅ 위치 추적 실행 (모든 값 준비된 경우에만 실행)
+  if (ready) {
+    useLocationTracker(userId, nickname, deviceToken); // ✅ 위치 바뀌면 채팅방 퇴장/입장 + recentUsers 갱신
+  }
 
-  // Firestore에서 공간 목록 받아오기
+  // ✅ 실시간 채팅방 목록 수신
   useEffect(() => {
-    const unsubscribe = firestore()
-      .collection('spaces')
-      .orderBy('createdAt', 'desc')
-      .onSnapshot((snapshot) => {
-        const roomList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setRooms(roomList);
-      });
+    const q = query(collection(db, 'spaces'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const roomList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setRooms(roomList); // ✅ 채팅방 리스트 화면에 표시
+    });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // ✅ 화면 나갈 때 수신 해제
   }, []);
 
+  // ✅ 채팅방 목록 렌더링
   const renderRoom = ({ item }) => (
     <TouchableOpacity
       style={{
         padding: 12,
         borderBottomWidth: 1,
-        borderColor: '#ccc'
+        borderColor: '#ccc',
       }}
-      onPress={() => navigation.navigate('Chat', { spaceId: item.id })}
+      onPress={() => navigation.navigate('Chat', { spaceId: item.id })} // ✅ 채팅방 ID를 넘겨 이동
     >
       <Text style={{ fontSize: 16 }}>{item.id}</Text>
     </TouchableOpacity>
@@ -81,87 +76,3 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
-
-
-// --------------------------------------------------------------------------------
-
-// 협업 파트 임시로 구현
-
-// import React, { useEffect, useState } from 'react';
-// import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-// import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-// import { db } from '../firebase/firebaseConfig';
-// import { useLocationTracker } from '../hooks/useLocationTracker';
-
-// import auth from '@react-native-firebase/auth'; // ✅ Firebase Auth 추가
-// import messaging from '@react-native-firebase/messaging'; // ✅ FCM 추가
-
-// export default function HomeScreen({ navigation }) {
-//   const [rooms, setRooms] = useState([]);
-//   const [ready, setReady] = useState(false); // ✅ 모든 값 초기화 완료 여부
-//   const [userId, setUserId] = useState('');
-//   const [deviceToken, setDeviceToken] = useState('');
-//   const [nickname] = useState(() => generateNickname()); // ✅ 랜덤 닉네임 생성
-
-//   // ✅ 랜덤 닉네임 생성 함수 (간단 예시)
-//   const generateNickname = () => {
-//     const animals = ['펭귄', '여우', '호랑이', '너구리', '토끼'];
-//     const adj = ['익명', '귀여운', '조용한', '신속한', '반짝이는'];
-//     const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-//     return `${rand(adj)}${rand(animals)}${Math.floor(Math.random() * 100)}`;
-//   };
-
-//   // ✅ 최초 실행 시 userId, token 준비
-//   useEffect(() => {
-//     const init = async () => {
-//       const authUser = await auth().signInAnonymously(); // ✅ 익명 로그인
-//       const token = await messaging().getToken(); // ✅ deviceToken 받기
-//       setUserId(authUser.user.uid);
-//       setDeviceToken(token);
-//       setReady(true); // ✅ 모든 값 준비 완료
-//     };
-//     init();
-//   }, []);
-
-//   // ✅ 위치 추적 실행 (userId, nickname, token 준비된 경우에만)
-//   if (ready) {
-//     useLocationTracker(userId, nickname, deviceToken); // ✅ 실행
-//   }
-
-//   useEffect(() => {
-//     const q = query(collection(db, 'spaces'), orderBy('createdAt', 'desc'));
-//     const unsubscribe = onSnapshot(q, (snapshot) => {
-//       const roomList = snapshot.docs.map((doc) => ({
-//         id: doc.id,
-//         ...doc.data(),
-//       }));
-//       setRooms(roomList);
-//     });
-
-//     return () => unsubscribe();
-//   }, []);
-
-//   const renderRoom = ({ item }) => (
-//     <TouchableOpacity
-//       style={{
-//         padding: 12,
-//         borderBottomWidth: 1,
-//         borderColor: '#ccc'
-//       }}
-//       onPress={() => navigation.navigate('Chat', { spaceId: item.id })}
-//     >
-//       <Text style={{ fontSize: 16 }}>{item.id}</Text>
-//     </TouchableOpacity>
-//   );
-
-//   return (
-//     <View style={{ padding: 20, flex: 1 }}>
-//       <Text style={{ fontSize: 20, marginBottom: 10 }}>Welcome to SsgChat!</Text>
-//       <FlatList
-//         data={rooms}
-//         keyExtractor={(item) => item.id}
-//         renderItem={renderRoom}
-//       />
-//     </View>
-//   );
-// }
