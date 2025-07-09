@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "898288508535",
+    "project_id": "result-ef8ce",
+    "storage_bucket": "result-ef8ce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:898288508535:android:3da96deb1eb66bcc0c7072",
+        "android_client_info": {
+          "package_name": "com.rladbeoeod.ssgchat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSW-3SAXtMNW9fBIha024gE8UJUWiH2R8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
