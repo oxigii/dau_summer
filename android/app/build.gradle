@@ -1,0 +1,56 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'  // Kotlin 플러그인 적용
+apply plugin: 'com.facebook.react'  // React Native 플러그인 적용
+apply plugin: 'com.google.gms.google-services'  // Firebase FCM 플러그인 적용
+
+android {
+    namespace 'com.ssgchatapp'  // 네임스페이스 설정
+    compileSdkVersion 33  // 컴파일 SDK 버전 설정
+
+    defaultConfig {
+        applicationId 'com.ssgchatapp'  // 앱의 패키지 이름
+        minSdkVersion 21  // 최소 SDK 버전 설정
+        targetSdkVersion 33  // 타겟 SDK 버전 설정
+        versionCode 1  // 버전 코드 설정
+        versionName "1.0.0"  // 버전 이름 설정
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug  // 디버그용 서명 설정
+        }
+        release {
+            signingConfig signingConfigs.debug  // 릴리즈용 서명 설정
+            minifyEnabled false  // 난독화 비활성화 (필요 시 true로 변경)
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"  // ProGuard 설정 파일
+        }
+    }
+
+    repositories {
+        google()  // Google repository
+        mavenCentral()  // Maven Central repository
+        jcenter()  // 필요 시 JCenter 추가
+    }
+
+    // Java toolchain을 사용하여 JDK 11을 명시적으로 설정
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(11))  // Java 11 사용
+        }
+    }
+
+    // Kotlin을 Java 11과 호환되게 설정
+    kotlin { jvmToolchain(11) }  // Kotlin JVM 타겟을 11로 설정
+}
+
+dependencies {
+    implementation("com.facebook.react:react-android")  // React Native Android 의존성
+    implementation 'com.google.firebase:firebase-messaging:23.0.0'  // Firebase Cloud Messaging (FCM) 의존성
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"  // 최신 Kotlin 의존성
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"  // Kotlin Serialization 의존성
+
+    // Firebase 관련 의존성 추가 (필요에 따라 선택)
+    implementation 'com.google.firebase:firebase-analytics:21.0.0'  // Firebase Analytics (필요 시 추가)
+    implementation 'com.google.firebase:firebase-auth:21.0.1'  // Firebase Authentication (필요 시 추가)
+    implementation 'com.google.firebase:firebase-firestore:24.0.1'  // Firebase Firestore (필요 시 추가)
+}
