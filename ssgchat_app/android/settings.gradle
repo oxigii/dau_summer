@@ -1,0 +1,37 @@
+pluginManagement {
+  // react-native-gradle-plugin 경로 설정
+  def reactNativeGradlePlugin = new File(rootDir, "../node_modules/@react-native/gradle-plugin").absolutePath
+  includeBuild(reactNativeGradlePlugin)
+
+  // expo-modules-autolinking 경로 설정
+  def expoPluginsPath = new File(rootDir, "../node_modules/expo-modules-autolinking/android/expo-gradle-plugin").absolutePath
+  includeBuild(expoPluginsPath)
+}
+
+plugins {
+  id("com.facebook.react.settings")
+  id("expo-autolinking-settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+  // EXPO_USE_COMMUNITY_AUTOLINKING 환경 변수를 확인하여 커스터마이즈
+  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
+    ex.autolinkLibrariesFromCommand()  // 커뮤니티 자동 연결
+  } else {
+    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)  // Expo 설정을 통한 자동 연결
+  }
+}
+
+expoAutolinking.useExpoModules()  // Expo 모듈 사용
+
+// 프로젝트 이름 설정
+rootProject.name = 'ssgchat_app'
+
+// Expo의 버전 관리 시스템 사용
+expoAutolinking.useExpoVersionCatalog()
+
+// :app 프로젝트를 포함
+include ':app'
+
+// Expo Autolinking의 React Native Gradle Plugin을 포함
+includeBuild(expoAutolinking.reactNativeGradlePlugin)
