@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Text, Button } from 'react-native';
 import auth from '@react-native-firebase/auth';
+import { getOrCreateNickname } from '../utils/nicknameService';
 
 const AuthAnonymousScreen = ({ onAuthSuccess }) => {
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged((user) => {
+    const unsubscribe = auth().onAuthStateChanged(async (user) => {
       if (user) {
-        onAuthSuccess();
+        const nickname = await getOrCreateNickname();
+        onAuthSuccess(user.uid, nickname); // ✅ uid와 nickname 전달
       }
     });
 
@@ -16,7 +18,9 @@ const AuthAnonymousScreen = ({ onAuthSuccess }) => {
   const handleSignIn = async () => {
     try {
       const userCredential = await auth().signInAnonymously();
-      console.log('Signed in anonymously:', userCredential.user);
+      const uid = userCredential.user.uid;
+      const nickname = await getOrCreateNickname();
+      onAuthSuccess(uid, nickname); // ✅ 직접 호출에서도 전달
     } catch (error) {
       console.error('Error signing in anonymously:', error);
     }

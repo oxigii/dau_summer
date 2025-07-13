@@ -1,4 +1,3 @@
-// src/screens/EntryScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
 import { saveNickname } from '../utils/nicknameService';

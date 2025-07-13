@@ -1,57 +1,79 @@
-// 협업 파트 임시로 구현
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Button } from 'react-native';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
 import { useLocationTracker } from '../hooks/useLocationTracker';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
-import auth from '@react-native-firebase/auth'; // ✅ Firebase Auth 추가
-import messaging from '@react-native-firebase/messaging'; // ✅ FCM 추가
-import { getOrCreateNickname } from '../utils/nicknameService'; // ✅ 닉네임 영구 저장 유틸
+import auth from '@react-native-firebase/auth';
+import messaging from '@react-native-firebase/messaging';
+import { getOrCreateNickname } from '../utils/nicknameService';
+import { createChatRoom } from '../firebase/firestoreService';
+import { addRoomToManualJoinList, getManualJoinList } from '../utils/joinedRooms';
+import * as Location from 'expo-location';
 
 export default function HomeScreen({ navigation }) {
   const [rooms, setRooms] = useState([]);
-  const [ready, setReady] = useState(false); // ✅ 모든 값 초기화 완료 여부
+  const [ready, setReady] = useState(false);
   const [userId, setUserId] = useState('');
   const [deviceToken, setDeviceToken] = useState('');
-  const [nickname, setNickname] = useState(''); // ✅ 상태로 관리
+  const [nickname, setNickname] = useState('');
 
-  // ✅ 최초 실행 시 userId, deviceToken, nickname 준비
+  usePushNotifications(navigation);
+
   useEffect(() => {
     const init = async () => {
-      const authUser = await auth().signInAnonymously(); // ✅ 익명 로그인
-      const token = await messaging().getToken();         // ✅ FCM 토큰 발급
-      const nick = await getOrCreateNickname();           // ✅ 닉네임 불러오기 (없으면 생성 후 저장)
+      const authUser = await auth().signInAnonymously();
+      const token = await messaging().getToken();
+      const nick = await getOrCreateNickname();
 
       setUserId(authUser.user.uid);
       setDeviceToken(token);
       setNickname(nick);
-      setReady(true); // ✅ 모든 정보가 준비되었을 때만 위치 추적 시작
+      setReady(true);
     };
     init();
   }, []);
 
-  // ✅ 위치 추적 실행 (모든 값 준비된 경우에만 실행)
   if (ready) {
-    useLocationTracker(userId, nickname, deviceToken); // ✅ 위치 바뀌면 채팅방 퇴장/입장 + recentUsers 갱신
+    useLocationTracker(userId, nickname, deviceToken);
   }
 
-  // ✅ 실시간 채팅방 목록 수신
   useEffect(() => {
     const q = query(collection(db, 'spaces'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const roomList = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setRooms(roomList); // ✅ 채팅방 리스트 화면에 표시
+
+      const manualRooms = await getManualJoinList();
+      const filtered = roomList.filter((room) => manualRooms.includes(room.id));
+      setRooms(filtered);
     });
 
-    return () => unsubscribe(); // ✅ 화면 나갈 때 수신 해제
+    return () => unsubscribe();
   }, []);
 
-  // ✅ 채팅방 목록 렌더링
+  const handleCreateRoom = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('위치 권한이 필요합니다.');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+      const spaceId = await createChatRoom(latitude, longitude);
+
+      await addRoomToManualJoinList(spaceId);
+      navigation.navigate('Chat', { spaceId });
+    } catch (err) {
+      console.error('방 생성 실패:', err);
+    }
+  };
+
   const renderRoom = ({ item }) => (
     <TouchableOpacity
       style={{
@@ -59,7 +81,7 @@ export default function HomeScreen({ navigation }) {
         borderBottomWidth: 1,
         borderColor: '#ccc',
       }}
-      onPress={() => navigation.navigate('Chat', { spaceId: item.id })} // ✅ 채팅방 ID를 넘겨 이동
+      onPress={() => navigation.navigate('Chat', { spaceId: item.id })}
     >
       <Text style={{ fontSize: 16 }}>{item.id}</Text>
     </TouchableOpacity>
@@ -67,7 +89,8 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={{ padding: 20, flex: 1 }}>
-      <Text style={{ fontSize: 20, marginBottom: 10 }}>Welcome to SsgChat!</Text>
+      <Text style={{ fontSize: 20, marginBottom: 10 }}>내가 들어간 채팅방 목록</Text>
+      <Button title="채팅방 생성하기" onPress={handleCreateRoom} />
       <FlatList
         data={rooms}
         keyExtractor={(item) => item.id}
@@ -76,3 +99,85 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 }
+
+//=================================================================================
+// // 의견 조율 전 코드
+// import React, { useEffect, useState } from 'react';
+// import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+// import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+// import { db } from '../firebase/firebaseConfig';
+// import { useLocationTracker } from '../hooks/useLocationTracker';
+// import { usePushNotifications } from '../hooks/usePushNotifications'; // ✅ 통합된 푸시 핸들러
+
+// import auth from '@react-native-firebase/auth';
+// import messaging from '@react-native-firebase/messaging';
+// import { getOrCreateNickname } from '../utils/nicknameService';
+
+// export default function HomeScreen({ navigation }) {
+//   const [rooms, setRooms] = useState([]);
+//   const [ready, setReady] = useState(false);
+//   const [userId, setUserId] = useState('');
+//   const [deviceToken, setDeviceToken] = useState('');
+//   const [nickname, setNickname] = useState('');
+
+//   // ✅ 푸시 권한 요청 및 알림 클릭 시 팝업 처리
+//   usePushNotifications(navigation);
+
+//   useEffect(() => {
+//     const init = async () => {
+//       const authUser = await auth().signInAnonymously();
+//       const token = await messaging().getToken();
+//       const nick = await getOrCreateNickname();
+
+//       setUserId(authUser.user.uid);
+//       setDeviceToken(token);
+//       setNickname(nick);
+//       setReady(true);
+//     };
+//     init();
+//   }, []);
+
+//   // ✅ 위치 추적 시작
+//   if (ready) {
+//     useLocationTracker(userId, nickname, deviceToken);
+//   }
+
+//   // ✅ 채팅방 목록 실시간 수신
+//   useEffect(() => {
+//     const q = query(collection(db, 'spaces'), orderBy('createdAt', 'desc'));
+//     const unsubscribe = onSnapshot(q, (snapshot) => {
+//       const roomList = snapshot.docs.map((doc) => ({
+//         id: doc.id,
+//         ...doc.data(),
+//       }));
+//       setRooms(roomList);
+//     });
+
+//     return () => unsubscribe();
+//   }, []);
+
+//   // ✅ 채팅방 렌더링
+//   const renderRoom = ({ item }) => (
+//     <TouchableOpacity
+//       style={{
+//         padding: 12,
+//         borderBottomWidth: 1,
+//         borderColor: '#ccc',
+//       }}
+//       onPress={() => navigation.navigate('Chat', { spaceId: item.id })}
+//     >
+//       <Text style={{ fontSize: 16 }}>{item.id}</Text>
+//     </TouchableOpacity>
+//   );
+
+//   return (
+//     <View style={{ padding: 20, flex: 1 }}>
+//       <Text style={{ fontSize: 20, marginBottom: 10 }}>Welcome to SsgChat!</Text>
+//       <FlatList
+//         data={rooms}
+//         keyExtractor={(item) => item.id}
+//         renderItem={renderRoom}
+//       />
+//     </View>
+//   );
+// }
